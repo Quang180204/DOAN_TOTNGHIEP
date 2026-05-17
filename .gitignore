@@ -1,0 +1,16 @@
+backend/node_modules/
+backend/dist/
+backend/.env
+backend/uploads/
+backend/.gitignore/
+
+frontend/node_modules/
+frontend/.next/
+frontend/.env.local
+frontend/frontend-dev.log
+frontend/frontend-start.log
+frontend/next-node.err
+frontend/next-node.log
+
+.DS_Store
+*.log
