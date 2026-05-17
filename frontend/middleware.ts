@@ -1,55 +1,84 @@
-// middleware.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+const PUBLIC_PATHS = [
+  '/',
+  '/contact',
+  '/search',
+  '/products',
+  '/account/login',
+  '/account/register',
+  '/account/forgot-password',
+  '/account/reset-password',
+];
+
+const CLIENT_PROTECTED_PREFIXES = [
+  '/account/profile',
+  '/account/address',
+  '/account/change-password',
+  '/cart',
+  '/checkout',
+  '/orders',
+  '/wishlist',
+];
+
+function isPublicPath(pathname: string) {
+  return PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+}
+
+function isClientProtectedPath(pathname: string) {
+  return CLIENT_PROTECTED_PREFIXES.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  
-  // Lấy token từ cookie
+
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/images') ||
+    pathname.startsWith('/Content') ||
+    pathname.startsWith('/Scripts') ||
+    pathname.startsWith('/uploads') ||
+    pathname === '/favicon.ico' ||
+    /\.(css|js|jpg|jpeg|png|gif|svg|ico|woff|woff2|webp|map|txt)$/i.test(pathname)
+  ) {
+    return NextResponse.next();
+  }
+
   const token = request.cookies.get('token')?.value;
   const userRole = request.cookies.get('userRole')?.value;
-  
-  // Cho phép truy cập trang login và register
-  if (pathname.startsWith('/account/login') || pathname.startsWith('/account/register')) {
-    return NextResponse.next();
-  }
-  
-  // Cho phép truy cập file tĩnh
-  if (pathname.match(/\.(css|js|jpg|jpeg|png|gif|svg|ico|woff|woff2)$/)) {
-    return NextResponse.next();
-  }
-  
-  // Nếu không có token -> redirect về login
-  if (!token) {
-    const loginUrl = new URL('/account/login', request.url);
-    return NextResponse.redirect(loginUrl);
-  }
-  
-  // Nếu là admin (Role=0)
-  if (userRole === '0') {
-    // Nếu đang ở trang client (không phải admin) -> về admin
-    if (!pathname.startsWith('/admin')) {
-      const adminUrl = new URL('/admin', request.url);
-      return NextResponse.redirect(adminUrl);
+
+  if (pathname.startsWith('/admin')) {
+    if (!token) {
+      return NextResponse.redirect(new URL('/account/login', request.url));
     }
-    return NextResponse.next();
-  }
-  
-  // Nếu là client (Role!=0)
-  if (userRole !== '0') {
-    // Nếu đang ở trang admin -> về home
-    if (pathname.startsWith('/admin')) {
-      const homeUrl = new URL('/', request.url);
-      return NextResponse.redirect(homeUrl);
+
+    if (userRole !== '0') {
+      return NextResponse.redirect(new URL('/', request.url));
     }
+
     return NextResponse.next();
   }
-  
+
+  if (isPublicPath(pathname)) {
+    return NextResponse.next();
+  }
+
+  if (isClientProtectedPath(pathname)) {
+    if (!token) {
+      return NextResponse.redirect(new URL('/account/login', request.url));
+    }
+
+    if (userRole === '0') {
+      return NextResponse.redirect(new URL('/admin', request.url));
+    }
+
+    return NextResponse.next();
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|Images|Content|Scripts).*)',
-  ],
+  matcher: ['/((?!api).*)'],
 };
