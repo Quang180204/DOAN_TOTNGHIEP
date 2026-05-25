@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import prisma from '../../config/prisma';
 import { AuthRequest } from '../../middleware/authMiddleware';
+import { toPublicUploadPath } from '../../utils/uploadPaths';
 
 // Generate JWT token
 const generateToken = (user: {
@@ -337,7 +338,7 @@ export const UpdateAvatar = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ success: false, message: 'Vui lòng chọn ảnh' });
     }
 
-    const avatarUrl = '/' + file.path.replace(/\\/g, '/');
+    const avatarUrl = toPublicUploadPath(file.path);
 
     const updatedUser = await prisma.account.update({
       where: { account_id: req.user.account_id },

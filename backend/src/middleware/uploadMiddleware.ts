@@ -1,45 +1,32 @@
 import multer from 'multer';
 import path from 'path';
-import fs from 'fs';
 import { Request, Response, NextFunction } from 'express';
+import { avatarUploadDir, ensureUploadDir, productUploadDir, uploadRootDir } from '../utils/uploadPaths';
 
-// Đảm bảo thư mục uploads tồn tại
-const uploadDir = 'uploads/';
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+ensureUploadDir(uploadRootDir);
 
-// Cấu hình storage cho avatar
 const avatarStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const dir = 'uploads/avatars/';
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    cb(null, dir);
+    ensureUploadDir(avatarUploadDir);
+    cb(null, avatarUploadDir);
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, 'avatar-' + uniqueSuffix + path.extname(file.originalname));
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    cb(null, `avatar-${uniqueSuffix}${path.extname(file.originalname)}`);
   }
 });
 
-// Cấu hình storage cho sản phẩm
 const productStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const dir = 'uploads/products/';
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    cb(null, dir);
+    ensureUploadDir(productUploadDir);
+    cb(null, productUploadDir);
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, 'product-' + uniqueSuffix + path.extname(file.originalname));
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    cb(null, `product-${uniqueSuffix}${path.extname(file.originalname)}`);
   }
 });
 
-// Lọc file
 const fileFilter = (req: any, file: any, cb: any) => {
   const allowedTypes = /jpeg|jpg|png|gif|webp/;
   const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
@@ -52,16 +39,15 @@ const fileFilter = (req: any, file: any, cb: any) => {
   }
 };
 
-// Middleware upload
 export const uploadAvatar = multer({
   storage: avatarStorage,
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+  limits: { fileSize: 2 * 1024 * 1024 },
   fileFilter
 }).single('avatar');
 
 export const uploadProductImage = multer({
   storage: productStorage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter
 }).single('image');
 
@@ -69,9 +55,8 @@ export const uploadMultipleProductImages = multer({
   storage: productStorage,
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter
-}).array('images', 10); // Tối đa 10 ảnh
+}).array('images', 10);
 
-// Middleware xử lý lỗi upload - SỬA LỖI: dùng instance of MulterError
 export const handleUploadError = (err: any, req: Request, res: Response, next: NextFunction) => {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {

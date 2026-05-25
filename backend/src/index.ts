@@ -14,6 +14,7 @@ import ContactRoutes from './Routes/client/ContactRoutes';
 import NewsletterRoutes from './Routes/client/NewsletterRoutes';
 import WishlistRoutes from './Routes/client/WishlistRoutes';
 import ChatbotRoutes from './Routes/client/ChatbotRoutes';
+import { ensureUploadDir, uploadRootDir } from './utils/uploadPaths';
 
 // Admin routes
 import AdminRoutes from './Routes/admin';
@@ -26,7 +27,8 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
-app.use('/uploads', express.static('uploads'));
+ensureUploadDir(uploadRootDir);
+app.use('/uploads', express.static(uploadRootDir));
 
 // Client API (cho người dùng)
 app.use('/api/account', AccountRoutes);
