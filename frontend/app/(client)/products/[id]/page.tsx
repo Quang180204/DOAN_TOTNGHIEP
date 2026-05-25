@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
@@ -42,6 +42,24 @@ interface Feedback {
   account: { Name: string; Avatar: string };
   replies: any[];
 }
+
+const repairText = (value?: string | null) => {
+  if (!value) return '';
+  try {
+    const repaired = decodeURIComponent(escape(value));
+    return repaired;
+  } catch {
+    return value;
+  }
+};
+
+const stripHtml = (html: string) => {
+  if (!html) return '';
+  if (typeof window === 'undefined') return html;
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  return tmp.textContent || tmp.innerText || '';
+};
 
 export default function ProductDetail() {
   const params = useParams();
@@ -127,6 +145,9 @@ export default function ProductDetail() {
     }
   };
 
+  const repairedDescription = useMemo(() => repairText(product?.description), [product?.description]);
+  const repairedSpecifications = useMemo(() => repairText(product?.specifications), [product?.specifications]);
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -162,7 +183,7 @@ export default function ProductDetail() {
           {product.Type === 1 ? 'Laptop' : 'Phụ kiện'}
         </Link>
         <span className="mx-2">/</span>
-        <span className="text-gray-700">{product.product_name}</span>
+        <span className="text-gray-700">{repairText(product.product_name)}</span>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -170,7 +191,7 @@ export default function ProductDetail() {
           <div className="border rounded-lg overflow-hidden bg-white">
             <img
               src={getMediaUrl(selectedImage || product.image, '/images/default.png')}
-              alt={product.product_name}
+              alt={repairText(product.product_name)}
               className="w-full h-96 object-contain"
             />
           </div>
@@ -194,7 +215,7 @@ export default function ProductDetail() {
         </div>
 
         <div>
-          <h1 className="text-2xl font-bold mb-2">{product.product_name}</h1>
+          <h1 className="text-2xl font-bold mb-2">{repairText(product.product_name)}</h1>
 
           <div className="flex items-center gap-2 mb-4">
             <div className="flex text-yellow-400">
@@ -263,11 +284,11 @@ export default function ProductDetail() {
           <div className="border-t pt-4 space-y-2 text-sm">
             <div className="flex">
               <span className="w-24 text-gray-500">Thương hiệu:</span>
-              <span className="text-gray-700">{product.brand?.brand_name || 'Đang cập nhật'}</span>
+              <span className="text-gray-700">{repairText(product.brand?.brand_name) || 'Đang cập nhật'}</span>
             </div>
             <div className="flex">
               <span className="w-24 text-gray-500">Danh mục:</span>
-              <span className="text-gray-700">{product.genre?.genre_name || 'Đang cập nhật'}</span>
+              <span className="text-gray-700">{repairText(product.genre?.genre_name) || 'Đang cập nhật'}</span>
             </div>
             <div className="flex">
               <span className="w-24 text-gray-500">Lượt xem:</span>
@@ -311,12 +332,15 @@ export default function ProductDetail() {
 
         <div className="py-6">
           {activeTab === 'description' && (
-            <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: product.description || 'Chưa có mô tả' }} />
+            <div
+              className="prose max-w-none prose-p:text-slate-700 prose-strong:text-slate-900 prose-li:text-slate-700"
+              dangerouslySetInnerHTML={{ __html: repairedDescription || 'Chưa có mô tả' }}
+            />
           )}
           {activeTab === 'specification' && (
             <div
-              className="prose max-w-none"
-              dangerouslySetInnerHTML={{ __html: product.specifications || 'Đang cập nhật' }}
+              className="prose max-w-none prose-p:text-slate-700 prose-strong:text-slate-900 prose-li:text-slate-700"
+              dangerouslySetInnerHTML={{ __html: repairedSpecifications || 'Đang cập nhật' }}
             />
           )}
           {activeTab === 'reviews' && (
@@ -340,7 +364,7 @@ export default function ProductDetail() {
                         <div className="flex-1">
                           <div className="flex items-center justify-between flex-wrap gap-2">
                             <div>
-                              <h4 className="font-semibold">{fb.account?.Name}</h4>
+                              <h4 className="font-semibold">{repairText(fb.account?.Name)}</h4>
                               <div className="flex items-center gap-2">
                                 <div className="flex text-yellow-400">
                                   {[1, 2, 3, 4, 5].map((star) =>
@@ -351,13 +375,11 @@ export default function ProductDetail() {
                                     )
                                   )}
                                 </div>
-                                <span className="text-xs text-gray-400">
-                                  {new Date(fb.create_at).toLocaleString('vi-VN')}
-                                </span>
+                                <span className="text-xs text-gray-400">{new Date(fb.create_at).toLocaleString('vi-VN')}</span>
                               </div>
                             </div>
                           </div>
-                          <p className="mt-2 text-gray-700">{fb.content}</p>
+                          <p className="mt-2 text-gray-700">{repairText(stripHtml(fb.content))}</p>
                         </div>
                       </div>
                     </div>
@@ -377,10 +399,10 @@ export default function ProductDetail() {
               <Link key={item.product_id} href={`/products/${item.product_id}`} className="border rounded-lg p-4 hover:shadow-lg transition">
                 <img
                   src={getMediaUrl(item.image, '/images/default.png')}
-                  alt={item.product_name}
+                  alt={repairText(item.product_name)}
                   className="w-full h-40 object-cover mb-3 rounded"
                 />
-                <h3 className="font-medium line-clamp-2 text-sm">{item.product_name}</h3>
+                <h3 className="font-medium line-clamp-2 text-sm">{repairText(item.product_name)}</h3>
                 <p className="text-red-600 font-bold mt-2">{parseInt(item.priceAfterDiscount, 10).toLocaleString('vi-VN')}đ</p>
               </Link>
             ))}

@@ -1,4 +1,3 @@
-// app/(admin)/admin/feedbacks/page.tsx
 'use client';
 
 import Link from 'next/link';
@@ -6,6 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import ActionMenu from '@/components/admin/common/ActionMenu';
+import ConfirmModal from '@/components/admin/common/ConfirmModal';
 import { getMediaUrl } from '@/lib/media';
 
 interface Feedback {
@@ -37,6 +37,7 @@ export default function FeedbacksPage() {
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [showReplyModal, setShowReplyModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
   const [replyContent, setReplyContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -92,6 +93,25 @@ export default function FeedbacksPage() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!selectedFeedback) return;
+
+    try {
+      const res = await api.delete(`/admin/feedbacks/delete/${selectedFeedback.feedback_id}`);
+      if (res.data.success) {
+        toast.success('Xóa đánh giá thành công');
+        fetchFeedbacks();
+      } else {
+        toast.error(res.data.message || 'Xóa đánh giá thất bại');
+      }
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Xóa đánh giá thất bại');
+    } finally {
+      setShowDeleteModal(false);
+      setSelectedFeedback(null);
+    }
+  };
+
   const renderStars = (rating: number) => {
     return (
       <div className="flex text-amber-400">
@@ -111,6 +131,7 @@ export default function FeedbacksPage() {
 
   const stripHtml = (html: string) => {
     if (!html) return '';
+    if (typeof window === 'undefined') return html;
     const tmp = document.createElement('div');
     tmp.innerHTML = html;
     return tmp.textContent || tmp.innerText || '';
@@ -126,7 +147,6 @@ export default function FeedbacksPage() {
 
   return (
     <div className="px-4 py-6 w-full max-w-[1600px] mx-auto fade-in">
-      {/* Header section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 bg-white px-6 py-4 rounded-2xl shadow-sm border border-gray-100">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600 shadow-inner">
@@ -135,7 +155,9 @@ export default function FeedbacksPage() {
           <div>
             <h1 className="text-xl font-bold text-gray-900 tracking-tight">Đánh giá</h1>
             <div className="flex items-center text-xs text-gray-500 space-x-2 mt-1">
-              <Link href="/admin" className="cursor-pointer hover:text-blue-600 transition-colors">Bảng điều khiển</Link>
+              <Link href="/admin" className="cursor-pointer hover:text-blue-600 transition-colors">
+                Bảng điều khiển
+              </Link>
               <span className="text-gray-300">/</span>
               <span className="font-semibold text-gray-700">Phản hồi của khách hàng</span>
             </div>
@@ -143,9 +165,7 @@ export default function FeedbacksPage() {
         </div>
       </div>
 
-      {/* Main Content Card */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-visible">
-        {/* Toolbar */}
         <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between gap-4 bg-gray-50/50 rounded-t-2xl">
           <form onSubmit={handleSearch} className="relative w-full sm:w-96">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -161,7 +181,6 @@ export default function FeedbacksPage() {
           </form>
         </div>
 
-        {/* Table */}
         <div className="overflow-x-auto min-h-[400px]">
           <table className="w-full text-sm text-left">
             <thead className="bg-gray-50/80 text-xs text-gray-500 uppercase tracking-wider">
@@ -193,31 +212,29 @@ export default function FeedbacksPage() {
                           }}
                         />
                       </div>
-                      <span className="font-bold text-gray-800 line-clamp-1">
-                        {fb.account_name}
-                      </span>
+                      <span className="font-bold text-gray-800 line-clamp-1">{fb.account_name}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <a href={`/admin/products/${fb.product_id}`} className="font-semibold text-blue-600 hover:text-blue-800 transition-colors line-clamp-2" title={fb.product_name}>
+                    <a
+                      href={`/admin/products/${fb.product_id}`}
+                      className="font-semibold text-blue-600 hover:text-blue-800 transition-colors line-clamp-2"
+                      title={fb.product_name}
+                    >
                       {fb.product_name}
                     </a>
                   </td>
                   <td className="px-6 py-4 text-center">
-                    <div className="flex justify-center">
-                      {renderStars(fb.rate_star)}
-                    </div>
+                    <div className="flex justify-center">{renderStars(fb.rate_star)}</div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="max-w-[300px]">
                       <p className="text-gray-600 line-clamp-2 font-medium" title={stripHtml(fb.content)}>
-                        "{stripHtml(fb.content)}"
+                        &quot;{stripHtml(fb.content)}&quot;
                       </p>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-center font-medium text-gray-500">
-                    {formatDate(fb.create_at)}
-                  </td>
+                  <td className="px-6 py-4 text-center font-medium text-gray-500">{formatDate(fb.create_at)}</td>
                   <td className="px-6 py-4 text-right">
                     <ActionMenu
                       items={[
@@ -227,6 +244,14 @@ export default function FeedbacksPage() {
                             setSelectedFeedback(fb);
                             setReplyContent('');
                             setShowReplyModal(true);
+                          }
+                        },
+                        {
+                          label: 'Xóa đánh giá',
+                          tone: 'danger',
+                          onClick: () => {
+                            setSelectedFeedback(fb);
+                            setShowDeleteModal(true);
                           }
                         }
                       ]}
@@ -250,7 +275,6 @@ export default function FeedbacksPage() {
           </table>
         </div>
 
-        {/* Pagination */}
         {totalPages > 1 && (
           <div className="p-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/50 rounded-b-2xl">
             <span className="text-sm text-gray-500 font-medium">
@@ -258,7 +282,7 @@ export default function FeedbacksPage() {
             </span>
             <div className="flex gap-1">
               <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
                 className="w-8 h-8 rounded-lg flex items-center justify-center border border-gray-200 text-gray-600 hover:bg-white hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed bg-transparent transition-colors"
               >
@@ -285,7 +309,7 @@ export default function FeedbacksPage() {
                 ) : null;
               })}
               <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
                 className="w-8 h-8 rounded-lg flex items-center justify-center border border-gray-200 text-gray-600 hover:bg-white hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed bg-transparent transition-colors"
               >
@@ -296,7 +320,6 @@ export default function FeedbacksPage() {
         )}
       </div>
 
-      {/* Reply Modal */}
       {showReplyModal && selectedFeedback && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm transition-opacity">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden transform transition-all animate-[modalIn_0.3s_ease-out]">
@@ -304,11 +327,14 @@ export default function FeedbacksPage() {
               <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                 <i className="bi bi-reply-all-fill text-blue-600"></i> Phản hồi đánh giá
               </h3>
-              <button onClick={() => setShowReplyModal(false)} className="text-gray-400 hover:text-gray-500 hover:bg-gray-100 w-8 h-8 rounded-lg flex items-center justify-center transition-colors">
+              <button
+                onClick={() => setShowReplyModal(false)}
+                className="text-gray-400 hover:text-gray-500 hover:bg-gray-100 w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+              >
                 <i className="bi bi-x-lg"></i>
               </button>
             </div>
-            
+
             <div className="p-6 space-y-5">
               <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 space-y-3 text-sm">
                 <div className="flex gap-2">
@@ -318,13 +344,13 @@ export default function FeedbacksPage() {
                 <div className="flex gap-2">
                   <span className="font-semibold text-gray-600 min-w-[100px]">Người đánh giá:</span>
                   <span className="font-bold text-gray-900 flex items-center gap-2">
-                    {selectedFeedback.account_name} 
+                    {selectedFeedback.account_name}
                     <span className="flex text-amber-400 text-xs">{renderStars(selectedFeedback.rate_star)}</span>
                   </span>
                 </div>
                 <div className="flex gap-2">
                   <span className="font-semibold text-gray-600 min-w-[100px]">Nội dung:</span>
-                  <span className="text-gray-700 italic">"{stripHtml(selectedFeedback.content)}"</span>
+                  <span className="text-gray-700 italic">&quot;{stripHtml(selectedFeedback.content)}&quot;</span>
                 </div>
               </div>
 
@@ -342,26 +368,43 @@ export default function FeedbacksPage() {
                 />
               </div>
             </div>
-            
+
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
-              <button onClick={() => setShowReplyModal(false)} className="px-5 py-2.5 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-xl text-sm font-semibold transition-colors shadow-sm">
+              <button
+                onClick={() => setShowReplyModal(false)}
+                className="px-5 py-2.5 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-xl text-sm font-semibold transition-colors shadow-sm"
+              >
                 Hủy bỏ
               </button>
-              <button 
-                onClick={handleReply} 
+              <button
+                onClick={handleReply}
                 disabled={submitting}
                 className="px-5 py-2.5 bg-blue-600 text-white hover:bg-blue-700 rounded-xl text-sm font-semibold shadow-md shadow-blue-500/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {submitting ? (
-                  <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span> Đang gửi...</>
+                  <>
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    Đang gửi...
+                  </>
                 ) : (
-                  <><i className="bi bi-send"></i> Gửi phản hồi</>
+                  <>
+                    <i className="bi bi-send"></i> Gửi phản hồi
+                  </>
                 )}
               </button>
             </div>
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        title="Xóa đánh giá"
+        message={`Bạn có chắc chắn muốn xóa đánh giá của "<strong class="text-red-600">${selectedFeedback?.account_name || ''}</strong>"?`}
+        type="danger"
+        onConfirm={handleDelete}
+        onCancel={() => setShowDeleteModal(false)}
+      />
 
       <style jsx global>{`
         @keyframes fadeIn {

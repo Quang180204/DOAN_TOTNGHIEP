@@ -1,7 +1,8 @@
 import express from 'express';
 import {
   GetFeedbacks,
-  ReplyComment
+  ReplyComment,
+  DeleteFeedback
 } from '../../Controllers/admin/FeedbacksController';
 import { verifyToken } from '../../middleware/authMiddleware';
 import { isAdmin } from '../../middleware/adminMiddleware';
@@ -13,5 +14,6 @@ router.use(isAdmin);
 
 router.get('/', GetFeedbacks);
 router.post('/reply', ReplyComment);
+router.delete('/delete/:id', DeleteFeedback);
 
 export default router;

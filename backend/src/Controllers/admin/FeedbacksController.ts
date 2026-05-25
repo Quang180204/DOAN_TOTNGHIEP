@@ -132,3 +132,39 @@ export const ReplyComment = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ success: false, message: 'Lỗi máy chủ' });
   }
 };
+
+// Xoa danh gia
+export const DeleteFeedback = async (req: AuthRequest, res: Response) => {
+  try {
+    const id = getParamId(req.params.id);
+    if (!id) {
+      return res.status(400).json({ success: false, message: 'ID khong hop le' });
+    }
+
+    const feedback = await prisma.feedback.findUnique({
+      where: { feedback_id: id }
+    });
+
+    if (!feedback) {
+      return res.status(404).json({ success: false, message: 'Khong tim thay danh gia' });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.replyFeedback.deleteMany({
+        where: { feedback_id: id }
+      });
+
+      await tx.feedback.delete({
+        where: { feedback_id: id }
+      });
+    });
+
+    res.json({
+      success: true,
+      message: 'Xoa danh gia thanh cong'
+    });
+  } catch (error) {
+    console.error('DeleteFeedback error:', error);
+    res.status(500).json({ success: false, message: 'Loi may chu' });
+  }
+};
