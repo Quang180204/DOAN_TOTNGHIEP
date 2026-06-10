@@ -8,6 +8,7 @@ import MobileMenu from '@/components/client/layout/MobileMenu';
 import CartSidebar from '@/components/client/layout/CartSidebar';
 import ToastNotification from '@/components/client/common/ToastNotification';
 import ChatbotWidget from '@/components/client/common/ChatbotWidget';
+import api from '@/lib/api';
 
 export default function ClientLayout({
   children,
@@ -21,20 +22,34 @@ export default function ClientLayout({
   const isLoginPage = pathname === '/account/login';
 
   useEffect(() => {
-    const getCartCount = () => {
-      const cookies = document.cookie.split(';');
-      let count = 0;
-      cookies.forEach(cookie => {
-        if (cookie.trim().startsWith('product_')) {
-          const quantity = parseInt(cookie.split('=')[1]);
-          if (!isNaN(quantity)) count += quantity;
-        }
-      });
-      setCartCount(count);
+    let active = true;
+
+    const getCartCount = async () => {
+      try {
+        const response = await api.get('/cart/preview');
+        const quantities = Array.isArray(response.data.quantities) ? response.data.quantities : [];
+        const count = quantities.reduce((sum: number, quantity: unknown) => {
+          const parsedQuantity = Number(quantity);
+          return sum + (Number.isFinite(parsedQuantity) ? parsedQuantity : 0);
+        }, 0);
+
+        if (active) setCartCount(count);
+      } catch {
+        if (active) setCartCount(0);
+      }
     };
-    getCartCount();
-    window.addEventListener('cartUpdated', getCartCount);
-    return () => window.removeEventListener('cartUpdated', getCartCount);
+
+    const handleCartUpdated = () => {
+      void getCartCount();
+    };
+
+    void getCartCount();
+    window.addEventListener('cartUpdated', handleCartUpdated);
+
+    return () => {
+      active = false;
+      window.removeEventListener('cartUpdated', handleCartUpdated);
+    };
   }, []);
 
   return (

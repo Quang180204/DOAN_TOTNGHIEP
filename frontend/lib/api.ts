@@ -1,7 +1,13 @@
 import axios from 'axios';
 
+const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
+  // Production requests go through Vercel so cart cookies remain first-party.
+  baseURL:
+    typeof window !== 'undefined' && process.env.NODE_ENV === 'production'
+      ? '/backend-api'
+      : configuredApiUrl,
   headers: {
     'Content-Type': 'application/json',
   },
