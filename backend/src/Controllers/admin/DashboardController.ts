@@ -56,11 +56,7 @@ export const GetDashboardStats = async (req: Request, res: Response) => {
     if (successfulOrders.length > 0) {
       for (const o of successfulOrders) {
         const info = orderInfoMap.get(o.order_id);
-        const rev = Number(o.total) || 0;
-        totalRevenue += rev;
-
         if (info && info.year === currentYear) {
-          revenueByMonth[info.month] += rev;
           ordersByMonth[info.month] += 1;
         }
       }
@@ -83,9 +79,12 @@ export const GetDashboardStats = async (req: Request, res: Response) => {
           
           if (product && info) {
             const lineRevenue = Number(d.price) * Number(d.quantity);
-            const categoryName = product.Type === 1 ? 'Laptop' : product.Type === 2 ? 'Phụ kiện' : 'Khác';
+            const categoryName = product.Type === 2 ? 'Phụ kiện' : 'Laptop';
 
             revenueByCategory[categoryName] = (revenueByCategory[categoryName] || 0) + lineRevenue;
+            if (info.year === currentYear) {
+              revenueByMonth[info.month] += lineRevenue;
+            }
 
             // Doanh thu theo nhóm sản phẩm trong ngày
             if (info.dateStr === todayStr) {
@@ -110,6 +109,8 @@ export const GetDashboardStats = async (req: Request, res: Response) => {
         }
       }
     }
+
+    totalRevenue = Object.values(revenueByCategory).reduce((sum, revenue) => sum + revenue, 0);
 
     const [totalAccounts, totalProducts, recentOrders] = await Promise.all([
       prisma.account.count(),
