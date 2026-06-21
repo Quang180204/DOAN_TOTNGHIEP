@@ -115,6 +115,13 @@ export default function ProductDetail() {
   };
 
   const addToCart = async () => {
+    if (!localStorage.getItem('token')) {
+      toast.error('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng');
+      sessionStorage.setItem('postAuthReturnUrl', window.location.pathname);
+      window.location.href = '/account/login?return=' + encodeURIComponent(window.location.pathname);
+      return;
+    }
+
     try {
       const res = await api.post('/cart/add', { productId: parseInt(id, 10), quantity });
       if (res.data.success) {
@@ -127,18 +134,18 @@ export default function ProductDetail() {
   };
 
   const buyNow = async () => {
-    try {
-      await api.put('/cart/update', { productId: parseInt(id, 10), quantity });
-    } catch {
-      await api.post('/cart/add', { productId: parseInt(id, 10), quantity });
-    }
-
     const checkoutUrl = `/checkout?buyNow=${id}&buyNowQuantity=${quantity}`;
     if (!localStorage.getItem('token')) {
       toast.error('Bạn cần đăng nhập để tiếp tục thanh toán');
       sessionStorage.setItem('postAuthReturnUrl', checkoutUrl);
       window.location.href = `/account/login?return=${encodeURIComponent(checkoutUrl)}`;
       return;
+    }
+
+    try {
+      await api.put('/cart/update', { productId: parseInt(id, 10), quantity });
+    } catch {
+      await api.post('/cart/add', { productId: parseInt(id, 10), quantity });
     }
 
     window.location.href = checkoutUrl;

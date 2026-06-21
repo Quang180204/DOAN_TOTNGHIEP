@@ -50,6 +50,14 @@ function SearchContent() {
   };
 
   const addToCart = async (productId: number) => {
+    if (!localStorage.getItem('token')) {
+      toast.error('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng');
+      const returnUrl = window.location.pathname + window.location.search;
+      sessionStorage.setItem('postAuthReturnUrl', returnUrl);
+      window.location.href = '/account/login?return=' + encodeURIComponent(returnUrl);
+      return;
+    }
+
     try {
       const res = await api.post('/cart/add', { productId, quantity: 1 });
       if (res.data.success) {

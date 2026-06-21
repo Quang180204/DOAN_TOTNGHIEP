@@ -18,9 +18,9 @@ const router = express.Router();
 // Public routes (không cần đăng nhập)
 router.get('/preview', PreviewCart);
 router.get('/view', ViewCart);
-router.post('/add', AddToCart);
-router.put('/update', UpdateCartQuantity);
-router.delete('/remove/:productId', RemoveFromCart);
+router.post('/add', verifyToken, AddToCart);
+router.put('/update', verifyToken, UpdateCartQuantity);
+router.delete('/remove/:productId', verifyToken, RemoveFromCart);
 router.post('/discount', UseDiscountCode);
 
 // Protected routes (cần đăng nhập)

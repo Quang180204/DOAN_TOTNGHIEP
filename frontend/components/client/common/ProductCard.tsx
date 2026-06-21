@@ -32,6 +32,12 @@ export default function ProductCard({ product }: ProductCardProps) {
     e.preventDefault();
     e.stopPropagation();
     if (!isInStock) return;
+    if (!localStorage.getItem('token')) {
+      toast.error('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng');
+      sessionStorage.setItem('postAuthReturnUrl', window.location.pathname);
+      window.location.href = '/account/login?return=' + encodeURIComponent(window.location.pathname);
+      return;
+    }
 
     try {
       const res = await api.post('/cart/add', { productId: product.product_id, quantity: 1 });
