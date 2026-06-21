@@ -60,6 +60,8 @@ export default function ProductCard({ product }: ProductCardProps) {
 
     if (!localStorage.getItem('token')) {
       toast.error('Vui lòng đăng nhập để thêm yêu thích');
+      sessionStorage.setItem('pendingWishlistProductId', String(product.product_id));
+      sessionStorage.setItem('postAuthReturnUrl', window.location.pathname);
       window.location.href = '/account/login?return=' + encodeURIComponent(window.location.pathname);
       return;
     }

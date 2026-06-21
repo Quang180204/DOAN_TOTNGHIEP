@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { XMarkIcon, TrashIcon } from '@heroicons/react/24/outline';
 import api from '@/lib/api';
+import { getMediaUrl } from '@/lib/media';
 
 interface CartItem {
   product_id: number;
@@ -110,14 +111,6 @@ export default function CartSidebar({ isOpen, onClose, onCartUpdate }: CartSideb
     return `${price.toLocaleString('vi-VN')}đ`;
   };
 
-  const getImageUrl = (imagePath: string) => {
-    if (!imagePath) return '/images/default.png';
-    if (imagePath.includes('/Content/Images/')) {
-      return imagePath.replace('/Content/Images/', '/images/');
-    }
-    return imagePath;
-  };
-
   const handleCheckout = () => {
     if (selectedIds.length === 0) return;
     onClose();
@@ -164,7 +157,7 @@ export default function CartSidebar({ isOpen, onClose, onCartUpdate }: CartSideb
                   />
                 </div>
                 <img
-                  src={getImageUrl(item.image)}
+                  src={getMediaUrl(item.image, '/images/default.png')}
                   alt={item.product_name}
                   className="w-16 h-16 object-cover rounded"
                   onError={(e) => {

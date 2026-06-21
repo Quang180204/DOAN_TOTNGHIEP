@@ -4,6 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
+import { persistAuthSession } from '@/lib/auth';
+import { toggleWishlist } from '@/lib/wishlist';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -28,18 +30,26 @@ export default function LoginPage() {
         const user = res.data.user;
         const userRole = user?.Role;
 
-        localStorage.setItem('token', res.data.token);
-        localStorage.setItem('userRole', userRole.toString());
-        localStorage.setItem('userId', user?.account_id.toString());
-        localStorage.setItem('userName', user?.Name || '');
-        localStorage.setItem('userEmail', user?.email || '');
-        localStorage.setItem('userAvatar', user?.Avatar || '/images/default.png');
+        persistAuthSession(res.data.token, user);
 
-        document.cookie = `token=${res.data.token}; path=/; max-age=604800`;
-        document.cookie = `userRole=${userRole}; path=/; max-age=604800`;
+        const pendingWishlistProductId = Number(sessionStorage.getItem('pendingWishlistProductId') || 0);
+        if (userRole !== 0 && pendingWishlistProductId) {
+          try {
+            await toggleWishlist(pendingWishlistProductId);
+          } catch {
+            toast.error('Đăng nhập thành công nhưng chưa thể thêm sản phẩm yêu thích');
+          } finally {
+            sessionStorage.removeItem('pendingWishlistProductId');
+          }
+        }
 
         toast.success('Đăng nhập thành công');
-        window.location.href = userRole === 0 ? '/admin' : '/';
+        const returnUrl =
+          new URLSearchParams(window.location.search).get('return') ||
+          sessionStorage.getItem('postAuthReturnUrl');
+        sessionStorage.removeItem('postAuthReturnUrl');
+        const safeReturnUrl = returnUrl?.startsWith('/') && !returnUrl.startsWith('//') ? returnUrl : '/';
+        window.location.href = userRole === 0 ? '/admin' : safeReturnUrl;
       } else {
         toast.error(res.data.message || 'Đăng nhập thất bại');
       }

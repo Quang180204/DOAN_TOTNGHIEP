@@ -33,6 +33,7 @@ export default function CreateProductPage() {
   const [discounts, setDiscounts] = useState<Discount[]>([]);
   const [loading, setLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [formData, setFormData] = useState({
     product_name: '',
     price: '',
@@ -71,6 +72,11 @@ export default function CreateProductPage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const updateQuantity = (value: string) => {
+    const normalizedValue = value.replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+    updateField('quantity', normalizedValue);
+  };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -88,8 +94,8 @@ export default function CreateProductPage() {
     const reader = new FileReader();
     reader.onloadend = () => {
       setImagePreview(reader.result as string);
-      updateField('image', reader.result as string);
     };
+    setImageFile(file);
     reader.readAsDataURL(file);
   };
 
@@ -103,15 +109,15 @@ export default function CreateProductPage() {
 
     setLoading(true);
     try {
-      const payload = {
-        ...formData,
-        Type: parseInt(formData.Type, 10),
-        price: parseFloat(formData.price),
-        quantity: formData.quantity || '0',
-        disscount_id: parseInt(formData.disscount_id, 10),
-      };
+      const payload = new FormData();
+      Object.entries(formData).forEach(([key, value]) => {
+        if (key !== 'image') payload.append(key, value);
+      });
+      if (imageFile) payload.append('image', imageFile);
 
-      const res = await api.post('/admin/products/create', payload);
+      const res = await api.post('/admin/products/create', payload, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       if (res.data.success) {
         toast.success('Thêm sản phẩm thành công');
         router.push('/admin/products');
@@ -256,10 +262,11 @@ export default function CreateProductPage() {
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-700">Số lượng</label>
                 <input
-                  type="number"
-                  min="0"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={formData.quantity}
-                  onChange={(e) => updateField('quantity', e.target.value)}
+                  onChange={(e) => updateQuantity(e.target.value)}
                   className={inputClass}
                   placeholder="Nhập số lượng tồn kho"
                 />

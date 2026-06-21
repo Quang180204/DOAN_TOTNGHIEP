@@ -7,6 +7,7 @@ import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import ConfirmModal from '@/components/admin/common/ConfirmModal';
 import ActionMenu from '@/components/admin/common/ActionMenu';
+import { getMediaUrl } from '@/lib/media';
 
 interface TrashProduct {
   product_id: number;
@@ -168,7 +169,15 @@ export default function ProductsTrashPage() {
                   <td className="px-6 py-5">
                     <div className="flex items-center gap-4">
                       <div className="w-14 h-14 rounded-2xl overflow-hidden bg-gray-100 border border-gray-100 shadow-sm group-hover:scale-105 transition-transform">
-                        <img src={product.image || '/default-product.png'} alt="" className="w-full h-full object-cover" />
+                        <img
+                          src={getMediaUrl(product.image)}
+                          alt={product.product_name}
+                          className="w-full h-full object-cover"
+                          onError={(event) => {
+                            event.currentTarget.onerror = null;
+                            event.currentTarget.src = '/images/default.png';
+                          }}
+                        />
                       </div>
                       <span className="font-bold text-gray-800 text-[15px]">{product.product_name}</span>
                     </div>

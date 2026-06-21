@@ -40,7 +40,20 @@ interface Feedback {
   rate_star: number;
   create_at: string;
   account: { Name: string; Avatar: string };
-  replies: any[];
+  replies: FeedbackReply[];
+}
+
+interface FeedbackReply {
+  rep_feedback_id: number;
+  feedback_id: number;
+  account_id: number;
+  content: string;
+  create_at: string;
+  account: {
+    Name: string;
+    Avatar: string;
+    account_id: number;
+  } | null;
 }
 
 const repairText = (value?: string | null) => {
@@ -114,23 +127,28 @@ export default function ProductDetail() {
   };
 
   const buyNow = async () => {
-    if (!localStorage.getItem('token')) {
-      toast.error('Bạn cần đăng nhập để tiếp tục mua sắm');
-      window.location.href = '/account/login';
-      return;
-    }
-
     try {
       await api.put('/cart/update', { productId: parseInt(id, 10), quantity });
     } catch {
       await api.post('/cart/add', { productId: parseInt(id, 10), quantity });
     }
-    window.location.href = `/checkout?buyNow=${id}&buyNowQuantity=${quantity}`;
+
+    const checkoutUrl = `/checkout?buyNow=${id}&buyNowQuantity=${quantity}`;
+    if (!localStorage.getItem('token')) {
+      toast.error('Bạn cần đăng nhập để tiếp tục thanh toán');
+      sessionStorage.setItem('postAuthReturnUrl', checkoutUrl);
+      window.location.href = `/account/login?return=${encodeURIComponent(checkoutUrl)}`;
+      return;
+    }
+
+    window.location.href = checkoutUrl;
   };
 
   const handleToggleWishlist = async () => {
     if (!localStorage.getItem('token')) {
       toast.error('Vui lòng đăng nhập để thêm yêu thích');
+      sessionStorage.setItem('pendingWishlistProductId', id);
+      sessionStorage.setItem('postAuthReturnUrl', window.location.pathname);
       window.location.href = '/account/login?return=' + encodeURIComponent(window.location.pathname);
       return;
     }
@@ -380,6 +398,45 @@ export default function ProductDetail() {
                             </div>
                           </div>
                           <p className="mt-2 text-gray-700">{repairText(stripHtml(fb.content))}</p>
+
+                          {fb.replies?.length > 0 && (
+                            <div className="mt-4 space-y-3">
+                              {fb.replies.map((reply) => (
+                                <div
+                                  key={reply.rep_feedback_id}
+                                  className="rounded-lg border border-blue-100 bg-blue-50/70 p-4"
+                                >
+                                  <div className="flex items-start gap-3">
+                                    <img
+                                      src={getMediaUrl(reply.account?.Avatar, '/images/default.png')}
+                                      alt={repairText(reply.account?.Name) || 'Quản trị viên'}
+                                      className="h-9 w-9 rounded-full border border-blue-200 bg-white object-cover"
+                                      onError={(event) => {
+                                        event.currentTarget.onerror = null;
+                                        event.currentTarget.src = '/images/default.png';
+                                      }}
+                                    />
+                                    <div className="min-w-0 flex-1">
+                                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                        <span className="font-semibold text-blue-900">
+                                          {repairText(reply.account?.Name) || 'Quản trị viên'}
+                                        </span>
+                                        <span className="rounded-full bg-blue-600 px-2 py-0.5 text-xs font-medium text-white">
+                                          Phản hồi từ cửa hàng
+                                        </span>
+                                        <span className="text-xs text-gray-400">
+                                          {new Date(reply.create_at).toLocaleString('vi-VN')}
+                                        </span>
+                                      </div>
+                                      <p className="mt-2 whitespace-pre-line text-sm leading-6 text-gray-700">
+                                        {repairText(stripHtml(reply.content))}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

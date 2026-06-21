@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
+import { getMediaUrl } from '@/lib/media';
 
 interface Brand {
   brand_id: number;
@@ -156,7 +157,15 @@ export default function EditProductPage() {
             <h3 className="text-lg font-bold text-gray-900 mb-6">Hình ảnh đại diện</h3>
             <div className="aspect-square rounded-2xl overflow-hidden bg-gray-50 border-2 border-dashed border-gray-200 mb-4 flex items-center justify-center relative group">
               {imagePreview ? (
-                <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                <img
+                  src={getMediaUrl(imagePreview)}
+                  alt="Preview"
+                  className="w-full h-full object-cover"
+                  onError={(event) => {
+                    event.currentTarget.onerror = null;
+                    event.currentTarget.src = '/images/default.png';
+                  }}
+                />
               ) : (
                 <div className="text-center">
                   <i className="bi bi-image text-4xl text-gray-300"></i>
@@ -188,9 +197,14 @@ export default function EditProductPage() {
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1.5 ml-1">Số lượng tồn kho</label>
                 <input 
-                  type="number" 
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={formData.quantity}
-                  onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                  onChange={(e) => {
+                    const quantity = e.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+                    setFormData({ ...formData, quantity });
+                  }}
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all outline-none"
                   placeholder="0"
                 />

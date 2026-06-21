@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
+import { getMediaUrl } from '@/lib/media';
 
 interface ProductDetail {
   product_id: number;
@@ -83,7 +84,15 @@ export default function ProductDetailPage() {
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 border border-white shadow-xl shadow-gray-200/50">
             <div className="aspect-square rounded-2xl overflow-hidden bg-gray-50 border border-gray-100 mb-6">
-              <img src={product.image || '/default-product.png'} alt={product.product_name} className="w-full h-full object-cover" />
+              <img
+                src={getMediaUrl(product.image)}
+                alt={product.product_name}
+                className="w-full h-full object-cover"
+                onError={(event) => {
+                  event.currentTarget.onerror = null;
+                  event.currentTarget.src = '/images/default.png';
+                }}
+              />
             </div>
             <div className="space-y-4">
               <div>

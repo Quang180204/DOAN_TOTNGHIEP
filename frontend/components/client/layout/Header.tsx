@@ -15,6 +15,7 @@ import {
 import { clearWishlistCache, getWishlistCount } from '@/lib/wishlist';
 import api from '@/lib/api';
 import { getMediaUrl } from '@/lib/media';
+import { authUpdatedEvent, clearAuthSession } from '@/lib/auth';
 
 interface HeaderProps {
   cartCount: number;
@@ -110,7 +111,11 @@ export default function Header({ cartCount, onCartOpen, onMobileMenuOpen }: Head
     };
 
     window.addEventListener('storage', syncUserState);
-    return () => window.removeEventListener('storage', syncUserState);
+    window.addEventListener(authUpdatedEvent, syncUserState);
+    return () => {
+      window.removeEventListener('storage', syncUserState);
+      window.removeEventListener(authUpdatedEvent, syncUserState);
+    };
   }, []);
 
   useEffect(() => {
@@ -127,9 +132,7 @@ export default function Header({ cartCount, onCartOpen, onMobileMenuOpen }: Head
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userName');
-    localStorage.removeItem('userAvatar');
+    clearAuthSession();
     clearWishlistCache();
     setIsLoggedIn(false);
     setWishlistCount(0);

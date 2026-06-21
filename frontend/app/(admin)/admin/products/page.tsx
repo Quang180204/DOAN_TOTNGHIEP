@@ -7,6 +7,7 @@ import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import ConfirmModal from '@/components/admin/common/ConfirmModal';
 import ActionMenu from '@/components/admin/common/ActionMenu';
+import { getMediaUrl } from '@/lib/media';
 
 interface Product {
   product_id: number;
@@ -190,7 +191,15 @@ export default function ProductsPage() {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-xl border border-gray-200 p-1 flex-shrink-0 bg-white group-hover:border-blue-300 transition-colors overflow-hidden">
-                        <img src={product.image || '/default-product.png'} alt="" className="w-full h-full object-contain" />
+                        <img
+                          src={getMediaUrl(product.image)}
+                          alt={product.product_name}
+                          className="w-full h-full object-contain"
+                          onError={(event) => {
+                            event.currentTarget.onerror = null;
+                            event.currentTarget.src = '/images/default.png';
+                          }}
+                        />
                       </div>
                       <div>
                         <Link href={`/admin/products/${product.product_id}`} className="font-bold text-gray-800 hover:text-blue-600 line-clamp-2 transition-colors">

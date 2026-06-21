@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
+import { getMediaUrl } from '@/lib/media';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -118,12 +119,6 @@ export default function AdminDashboardPage() {
     const num = Number(val);
     if (isNaN(num)) return 0;
     return num;
-  };
-
-  const getProductImageUrl = (image?: string) => {
-    if (!image) return '/images/default.png';
-    if (image.startsWith('http') || image.startsWith('/')) return image.replace('/Content/Images/', '/images/');
-    return `/images/${image}`;
   };
 
   const ordersChartData = {
@@ -304,7 +299,7 @@ export default function AdminDashboardPage() {
                 <div className="w-1/2 flex items-center gap-4">
                   <div className="w-14 h-14 rounded-xl bg-white border border-gray-200 p-2 flex-shrink-0 shadow-sm group-hover:border-blue-200 transition-colors">
                     <img 
-                      src={getProductImageUrl(p.image)} 
+                      src={getMediaUrl(p.image, '/images/default.png')}
                       alt="" 
                       className="w-full h-full object-contain" 
                       onError={(e: any) => { e.currentTarget.src = 'https://img.icons8.com/color/48/000000/keyboard.png'; }} 

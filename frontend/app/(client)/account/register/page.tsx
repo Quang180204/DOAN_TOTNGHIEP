@@ -1,13 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
+import { persistAuthSession } from '@/lib/auth';
+import { toggleWishlist } from '@/lib/wishlist';
 
 export default function RegisterPage() {
-  const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -40,10 +40,25 @@ export default function RegisterPage() {
         Phone: phone
       });
       if (res.data.success) {
-        localStorage.setItem('token', res.data.token);
-        localStorage.setItem('userName', res.data.user.Name);
+        persistAuthSession(res.data.token, res.data.user);
+
+        const pendingWishlistProductId = Number(sessionStorage.getItem('pendingWishlistProductId') || 0);
+        if (pendingWishlistProductId) {
+          try {
+            await toggleWishlist(pendingWishlistProductId);
+          } catch {
+            toast.error('Tài khoản đã được tạo nhưng chưa thể thêm sản phẩm yêu thích');
+          } finally {
+            sessionStorage.removeItem('pendingWishlistProductId');
+          }
+        }
+
         toast.success('Đăng ký thành công!');
-        router.push('/');
+        const returnUrl =
+          new URLSearchParams(window.location.search).get('return') ||
+          sessionStorage.getItem('postAuthReturnUrl');
+        sessionStorage.removeItem('postAuthReturnUrl');
+        window.location.href = returnUrl?.startsWith('/') && !returnUrl.startsWith('//') ? returnUrl : '/';
       } else {
         toast.error(res.data.message || 'Đăng ký thất bại');
       }

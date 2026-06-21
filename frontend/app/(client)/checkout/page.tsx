@@ -101,7 +101,9 @@ function CheckoutContent() {
     const token = localStorage.getItem('token');
     if (!token) {
       toast.error('Vui lòng đăng nhập để thanh toán');
-      router.push('/account/login?return=/checkout');
+      const checkoutReturnUrl = `/checkout${queryString ? `?${queryString}` : ''}`;
+      sessionStorage.setItem('postAuthReturnUrl', checkoutReturnUrl);
+      router.push(`/account/login?return=${encodeURIComponent(checkoutReturnUrl)}`);
       return;
     }
     setIsLoggedIn(true);
@@ -252,6 +254,7 @@ function CheckoutContent() {
         const res = await api.post('/cart/save-order', buildOrderPayload());
         if (res.data.success) {
           toast.success('Đặt hàng thành công');
+          window.dispatchEvent(new Event('cartUpdated'));
           router.push(`/orders/${res.data.orderId}`);
           return;
         }

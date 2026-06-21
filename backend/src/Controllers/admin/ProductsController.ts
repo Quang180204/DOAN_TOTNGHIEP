@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import prisma from '../../config/prisma';
 import { AuthRequest } from '../../middleware/authMiddleware';
 import { Prisma } from '@prisma/client';
+import { toPublicUploadPath } from '../../utils/uploadPaths';
 
 const getParamId = (param: string | string[] | undefined): number | null => {
   if (!param) return null;
@@ -180,6 +181,8 @@ export const CreateProduct = async (req: AuthRequest, res: Response) => {
       description,
       image
     } = req.body;
+    const uploadedFile = (req as any).file;
+    const imagePath = uploadedFile ? toPublicUploadPath(uploadedFile.path) : image;
 
     if (!product_name || !price || !genre_id || !brand_id) {
       return res.status(400).json({ success: false, message: 'Vui lòng nhập đầy đủ thông tin' });
@@ -196,7 +199,7 @@ export const CreateProduct = async (req: AuthRequest, res: Response) => {
         Type: parseInt(Type) || 1,
         specifications: specifications || '',
         description: description || '',
-        image: image || '/images/default.png',
+        image: imagePath || '/images/default.png',
         status: '1',
         view: 0,
         buyturn: 0,

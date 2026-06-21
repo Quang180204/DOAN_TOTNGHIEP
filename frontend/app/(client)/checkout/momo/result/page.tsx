@@ -27,7 +27,7 @@ function MomoResultContent() {
         sessionStorage.removeItem(`momo_order_${extraOrderId}`);
         window.dispatchEvent(new Event('cartUpdated'));
         toast.success('Thanh toán đơn hàng thành công');
-        router.replace('/');
+        router.replace(`/orders/${extraOrderId}`);
       } catch (error: any) {
         toast.error(error.response?.data?.message || 'Thanh toán MoMo thất bại');
         router.replace('/checkout');

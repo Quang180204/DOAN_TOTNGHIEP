@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { clearAuthSession } from '@/lib/auth';
 
 const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
@@ -28,13 +29,7 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (typeof window !== 'undefined' && error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('userRole');
-      localStorage.removeItem('userName');
-      localStorage.removeItem('userId');
-      localStorage.removeItem('userEmail');
-      document.cookie = 'token=; path=/; max-age=0';
-      document.cookie = 'userRole=; path=/; max-age=0';
+      clearAuthSession();
 
       if (!window.location.pathname.includes('/account/login')) {
         window.location.href = '/account/login';
